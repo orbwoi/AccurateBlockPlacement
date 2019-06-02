@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "accurateblockplacement",
+  "version": "${version}",
+
+  "name": "Accurate Block Placement",
+  "description": "A mod which causes players to place a blocks based on what they are looking at rather than a timer.",
+  "authors": [
+    "Clayborn"
+  ],
+  "contact": {
+    "homepage": "https://minecraft.curseforge.com/projects/accurate-block-placement",
+    "sources": "https://github.com/orbwoi/AccurateBlockPlacement"
+  },
+
+  "license": "MIT",
+  "icon": "assets/accurateblockplacement/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.clayborn.accurateblockplacement.AccurateBlockPlacementMod"
+    ]
+  },
+  "mixins": [
+  	{
+	  	"environment": "client",
+	    "config": "accurateblockplacement.mixins.json"
+    }
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.4.0",
+    "fabric": "*"
+  }
+}

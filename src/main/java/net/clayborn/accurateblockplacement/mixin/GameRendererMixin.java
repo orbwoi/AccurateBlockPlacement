@@ -24,6 +24,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 @Mixin(GameRenderer.class)
@@ -89,7 +90,7 @@ public abstract class GameRendererMixin {
 					.getMethod(blockActivateMethodName, BlockState.class, World.class, BlockPos.class, PlayerEntity.class, Hand.class, BlockHitResult.class)
 					.getDeclaringClass().equals(Block.class);
 		} catch (Exception e) {
-			System.out.println("Unable to find block " + block.getClass().getName() + " activate method!");
+			System.out.println("[ERROR] Unable to find block " + block.getClass().getName() + " activate method!");
 			return false;
 		}
 	}
@@ -127,7 +128,7 @@ public abstract class GameRendererMixin {
 					.getMethod(itemUseMethodName, World.class, PlayerEntity.class, Hand.class)
 					.getDeclaringClass().equals(Item.class);
 		} catch (Exception e) {
-			System.out.println("Unable to find item " + item.getClass().getName() + " use method!");
+			System.out.println("[ERROR] Unable to find item " + item.getClass().getName() + " use method!");
 			return false;
 		}
 	}
@@ -163,7 +164,7 @@ public abstract class GameRendererMixin {
 					.getMethod(itemUseOnBlockMethodName, ItemUsageContext.class)
 					.getDeclaringClass().equals(BlockItem.class);
 		} catch (Exception e) {
-			System.out.println("Unable to find item " + item.getClass().getName() + " useOnBlock method!");
+			System.out.println("[ERROR] Unable to find item " + item.getClass().getName() + " useOnBlock method!");
 			return false;
 		}
 	}	
@@ -200,6 +201,7 @@ public abstract class GameRendererMixin {
 			// clear history since they let go of the button
 			AccurateBlockPlacementMod.lastSeenBlockPos = null;
 			AccurateBlockPlacementMod.lastPlacedBlockPos = null;
+			AccurateBlockPlacementMod.lastPlayerPlacedBlockPos = null;
 			
 			// a fresh keypress is required each time the item being used changes
 			lastItemInUse = currentItem;
@@ -234,11 +236,29 @@ public abstract class GameRendererMixin {
 
 			// it's a block!! it's go time!
 			AccurateBlockPlacementMod.disableNormalItemUse = true;
+			
+			ItemPlacementContext targetPlacement = new ItemPlacementContext(
+					new ItemUsageContext(client.player, handOfCurrentItemInUse, blockHitResult));
+			
+			// remember what was there before
+			Block oldBlock = client.world.getBlockState(targetPlacement.getBlockPos()).getBlock();
+						
+			double facingAxisPlayerPos = 0.0d;
+			double facingAxisPlayerLastPos = 0.0d;
+			double facingAxisLastPlacedPos = 0.0d;
+			
+			if (AccurateBlockPlacementMod.lastPlacedBlockPos != null && AccurateBlockPlacementMod.lastPlayerPlacedBlockPos != null)
+			{
+				facingAxisPlayerPos = client.player.getPos().getComponentAlongAxis(targetPlacement.getFacing().getAxis());
+				facingAxisPlayerLastPos =  AccurateBlockPlacementMod.lastPlayerPlacedBlockPos.getComponentAlongAxis(targetPlacement.getFacing().getAxis());
+				facingAxisLastPlacedPos = new Vec3d(AccurateBlockPlacementMod.lastPlacedBlockPos).getComponentAlongAxis(targetPlacement.getFacing().getAxis());
+			}
 
 			// if [ we are still holding the same block we starting pressing 'use' with] AND
 			// [ [ we have a fresh key press ] OR
 			// [ [ we have no 'seen' history or the 'seen' history isn't a match ] AND
-			// [ we have no 'place' history or the 'place' history isn't a match ] ] ]
+			// [ we have no 'place' history or the 'place' history isn't a match ] ] OR
+			// [ we have 'place' history, it is a match, the player is building toward themselves and has moved one block backwards] ]
 			// we can try to place a block
 			if (lastItemInUse == currentItem && // note: this is always true on a fresh keypress
 					(freshKeyPress ||
@@ -247,7 +267,16 @@ public abstract class GameRendererMixin {
 							|| !AccurateBlockPlacementMod.lastSeenBlockPos.equals(blockHitPos))
 						&& (AccurateBlockPlacementMod.lastPlacedBlockPos == null
 							|| !AccurateBlockPlacementMod.lastPlacedBlockPos.equals(blockHitPos))
-					))) {					
+					) ||
+					( AccurateBlockPlacementMod.lastPlacedBlockPos != null && AccurateBlockPlacementMod.lastPlayerPlacedBlockPos != null
+					  && AccurateBlockPlacementMod.lastPlacedBlockPos.equals(blockHitPos)
+					  && (
+						  Math.abs(facingAxisPlayerLastPos - facingAxisPlayerPos) >= 1.0d &&
+						  Math.abs(facingAxisPlayerLastPos - facingAxisLastPlacedPos) < Math.abs(facingAxisPlayerPos - facingAxisLastPlacedPos)
+						 )					  
+					))) {		
+				
+				//AccurateBlockPlacementMod.lastPlayerPlacedBlockPos.add(new Vec3d(targetPlacement.getFacing().getVector()))) <= 0.1
 
 				IMinecraftClientAccessor clientAccessor = (IMinecraftClientAccessor) client;
 				
@@ -263,15 +292,44 @@ public abstract class GameRendererMixin {
 					clientAccessor.accurateblockplacement_DoItemUseBypassDisable();
 
 					// update last placed
-					// TODO: don't update if placement failed
-					AccurateBlockPlacementMod.lastPlacedBlockPos = new ItemPlacementContext(
-							new ItemUsageContext(client.player, handOfCurrentItemInUse, blockHitResult)).getBlockPos();
+					if (!oldBlock.equals(client.world.getBlockState(targetPlacement.getBlockPos()).getBlock()))
+					{
+						AccurateBlockPlacementMod.lastPlacedBlockPos = targetPlacement.getBlockPos();
+										
+						if (AccurateBlockPlacementMod.lastPlayerPlacedBlockPos == null)
+						{
+							AccurateBlockPlacementMod.lastPlayerPlacedBlockPos = client.player.getPos();
+						}
+						else
+						{
+							// prevent slow rounding error from eventually moving the player out of range
+							Vec3d summedLastPlayerPos = AccurateBlockPlacementMod.lastPlayerPlacedBlockPos.add(new Vec3d(targetPlacement.getFacing().getVector()));
+		
+							Vec3d newLastPlayerPlacedPos = null;
+							
+							switch(targetPlacement.getFacing().getAxis())
+							{
+							case X:
+								newLastPlayerPlacedPos = new Vec3d(summedLastPlayerPos.x, client.player.getPos().y, client.player.getPos().z);
+								break;
+							case Y:
+								newLastPlayerPlacedPos = new Vec3d(client.player.getPos().x, summedLastPlayerPos.y, client.player.getPos().z);
+								break;
+							case Z:
+								newLastPlayerPlacedPos = new Vec3d(client.player.getPos().x, client.player.getPos().y, summedLastPlayerPos.z);
+								break;
+							}
+							
+							AccurateBlockPlacementMod.lastPlayerPlacedBlockPos = newLastPlayerPlacedPos;							
+							
+						}
+					}
 					
 					runOnceFlag = false;
 				}
 
 			}
-			
+						
 			// update the last block we looked at
 			AccurateBlockPlacementMod.lastSeenBlockPos = blockHitResult.getBlockPos();
 

@@ -4,7 +4,7 @@
   "version": "${version}",
 
   "name": "Accurate Block Placement",
-  "description": "A mod which causes players to place a blocks based on what they are looking at rather than a timer.",
+  "description": "Build at super speed with your bare hands!",
   "authors": [
     "Clayborn"
   ],
@@ -16,7 +16,7 @@
   "license": "MIT",
   "icon": "assets/accurateblockplacement/icon.png",
 
-  "environment": "*",
+  "environment": "client",
   "entrypoints": {
     "main": [
       "net.clayborn.accurateblockplacement.AccurateBlockPlacementMod"

@@ -1,18 +1,17 @@
 package net.clayborn.accurateblockplacement;
 
-import org.lwjgl.glfw.GLFW;
-
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.keybinding.FabricKeyBinding;
 import net.fabricmc.fabric.api.client.keybinding.KeyBindingRegistry;
 import net.fabricmc.fabric.api.event.client.ClientTickCallback;
-import net.minecraft.ChatFormat;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.util.InputUtil;
-import net.minecraft.network.chat.ChatMessageType;
-import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.MessageType;
+import net.minecraft.text.Style;
+import net.minecraft.text.TranslatableText;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
+import org.lwjgl.glfw.GLFW;
 
 public class AccurateBlockPlacementMod implements ModInitializer {
 
@@ -50,17 +49,17 @@ public class AccurateBlockPlacementMod implements ModInitializer {
 	    		{
 	    			isAccurateBlockPlacementEnabled = !isAccurateBlockPlacementEnabled;
 	    			
-	    			TranslatableComponent message = null;
+	    			TranslatableText message = null;
 	    			
 	    			if (isAccurateBlockPlacementEnabled) {
-	    				message = new TranslatableComponent("net.clayborn.accurateblockplacement.modplacementmodemessage");
+	    				message = new TranslatableText("net.clayborn.accurateblockplacement.modplacementmodemessage");
 	    			} else {
-	    				message = new TranslatableComponent("net.clayborn.accurateblockplacement.vanillaplacementmodemessage");
+	    				message = new TranslatableText("net.clayborn.accurateblockplacement.vanillaplacementmodemessage");
 	    			}
 	    			
-	    			message.setStyle((new Style()).setColor(ChatFormat.DARK_AQUA));
+	    			message.setStyle((new Style()).setColor(Formatting.DARK_AQUA));
 	    			
-    				client.inGameHud.addChatMessage(ChatMessageType.SYSTEM, message);
+    				client.inGameHud.addChatMessage(MessageType.SYSTEM, message);
 	    		}
 	    		wasAccurateBlockPlacementToggleKeyPressed = true;
 	    	} else {

@@ -29,9 +29,9 @@ public class AccurateBlockPlacementMod implements ModInitializer
     public void onInitialize()
     {
 
-        keyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(new Identifier("accurateblockplacement", "togglevanillaplacement").toString(),
+        keyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.accurateblockplacement.togglevanillaplacement",
                 InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_UNKNOWN,
+                GLFW.GLFW_KEY_R,
                 KEY_CATEGORY_NAME));
         ClientTickEvents.END_CLIENT_TICK.register(e -> {
             MinecraftClient client = MinecraftClient.getInstance();

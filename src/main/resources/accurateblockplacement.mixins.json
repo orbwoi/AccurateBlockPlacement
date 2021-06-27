@@ -4,8 +4,8 @@
   "compatibilityLevel": "JAVA_8",
   "client": [
     "GameRendererMixin",
-	"MinecraftClientMixin",
-	"KeyBindingMixin"
+    "KeyBindingMixin",
+    "MinecraftClientMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -265,7 +265,7 @@ public abstract class GameRendererMixin
 
         // don't override behavior of clicking activatable blocks
         // unless holding SNEAKING to replicate vanilla behaviors
-        if (isTargetBlockActivatable && !client.player.isSneaking())
+        if (isTargetBlockActivatable && client.player.isSneaking())
             return;
 
         // are they holding the use key and is the item to use a block?

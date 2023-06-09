@@ -1,18 +1,17 @@
 package net.clayborn.accurateblockplacement;
 
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import org.lwjgl.glfw.GLFW;
 
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.client.keybinding.FabricKeyBinding;
-import net.fabricmc.fabric.api.client.keybinding.KeyBindingRegistry;
-import net.fabricmc.fabric.api.event.client.ClientTickCallback;
-import net.minecraft.ChatFormat;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
-import net.minecraft.network.chat.ChatMessageType;
-import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraft.util.Identifier;
 
 public class AccurateBlockPlacementMod implements ModInitializer {
 
@@ -20,7 +19,7 @@ public class AccurateBlockPlacementMod implements ModInitializer {
 	public static Boolean  disableNormalItemUse = false;
 	public static boolean  isAccurateBlockPlacementEnabled = true;
 
-	private static FabricKeyBinding keyBinding;
+	private static KeyBinding keyBinding;
 
 	private static boolean wasAccurateBlockPlacementToggleKeyPressed = false;
 	
@@ -29,17 +28,14 @@ public class AccurateBlockPlacementMod implements ModInitializer {
 	@Override
 	public void onInitialize() {
 
-		keyBinding = FabricKeyBinding.Builder.create(
-			    new Identifier("accurateblockplacement", "togglevanillaplacement"),
+		keyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+				"key.accurateblockplacement.togglevanillaplacement",
 			    InputUtil.Type.KEYSYM,
 			    GLFW.GLFW_KEY_UNKNOWN,
 			    KEY_CATEGORY_NAME
-			).build();
-
-		KeyBindingRegistry.INSTANCE.addCategory(KEY_CATEGORY_NAME);
-		KeyBindingRegistry.INSTANCE.register(keyBinding);
+				));
 		
-		ClientTickCallback.EVENT.register(e ->
+		ClientTickEvents.END_CLIENT_TICK.register(e ->
 		{
 			MinecraftClient client = MinecraftClient.getInstance();
 			if (client == null || client.inGameHud == null) return;
@@ -50,17 +46,17 @@ public class AccurateBlockPlacementMod implements ModInitializer {
 	    		{
 	    			isAccurateBlockPlacementEnabled = !isAccurateBlockPlacementEnabled;
 	    			
-	    			TranslatableComponent message = null;
+	    			MutableText message = null;
 	    			
 	    			if (isAccurateBlockPlacementEnabled) {
-	    				message = new TranslatableComponent("net.clayborn.accurateblockplacement.modplacementmodemessage");
+	    				message = Text.translatable("net.clayborn.accurateblockplacement.modplacementmodemessage");
 	    			} else {
-	    				message = new TranslatableComponent("net.clayborn.accurateblockplacement.vanillaplacementmodemessage");
+	    				message = Text.translatable("net.clayborn.accurateblockplacement.vanillaplacementmodemessage");
 	    			}
 	    			
-	    			message.setStyle((new Style()).setColor(ChatFormat.DARK_AQUA));
+	    			message.setStyle( Style.EMPTY.withColor(Formatting.DARK_AQUA));
 	    			
-    				client.inGameHud.addChatMessage(ChatMessageType.SYSTEM, message);
+    				client.inGameHud.getChatHud().addMessage(message);
 	    		}
 	    		wasAccurateBlockPlacementToggleKeyPressed = true;
 	    	} else {
